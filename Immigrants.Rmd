@@ -1,0 +1,357 @@
+---
+title: "Project 2"
+author: "Junchi Tian"
+date: "December 3, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Library
+```{r}
+library(ResourceSelection)
+library(pROC)
+library(pscl)
+library(ISLR)
+library(dplyr)
+library(ROCR)
+library(bestglm)
+library(openintro)
+library(leaps)
+```
+
+Import the data
+```{r}
+bank <- read.csv('Churn_Modelling.csv')
+attach(bank)
+#The first 3 colomns is not important:RowNumber,CustomerId,SurnameN
+bank=bank[,c(-1,-2,-3)]
+```
+
+Use subsetting - forward selection to search
+```{r}
+reg.forward <- regsubsets(Exited~., data = train, nvmax = 10, nbest = 1, method = "forward")
+summary(reg.forward)
+plot(reg.forward, scale = "adjr2", main = "Adjusted R^2")
+reg.forward
+#from the plot, we would like to select CreditScore, Geography, Gender, Age, Balance, IsActiveMember
+```
+
+Explortary Data Analysis
+```{r}
+#About the whole data
+head(bank)
+tail(bank, 6)
+str(bank)
+
+#About the dependent variable
+table(Exited)
+str(Exited)
+
+#Overview of all the variables
+summary(bank)
+
+#boxplot of the variables
+#age
+box_age<- boxplot(Age)
+#balance
+box_balance <- boxplot(Balance)
+#credit score
+box_creditscore<-boxplot(CreditScore)
+
+#hist of the numeric variable
+#Geography
+factor_Geography <- as.integer(Geography)
+#1 is France, 2 is Germany, 3 is Spain
+hist(factor_Geography~Exited)
+
+#IsActiveMember
+hist(IsActiveMember)
+
+#Age
+hist(Age)
+
+```
+
+
+Divide the data set into test and train
+```{r}
+#We are going to go with a 80% train 20% test appoarch. Not that the common and space tells R to include the entire data.frame
+train <- bank[1:8000, ]
+test <- bank[8001:10000, ]
+```
+
+
+run logisitc regression model, start by using CreditScore, Geography, Gender, Age, Balance, IsActiveMember
+```{r}
+bank_log<-glm(Exited~CreditScore+Geography+Gender+Age+Balance+IsActiveMember, family = binomial(link = "logit"), data = train)
+summary(bank_log)
+#For every one unit change in creditscore, log odds of exited decreases by 5.973e-04
+#For every one unit change in age, log odds of exited increases by 7.545e-02
+#For every one unit change in balance, log odds of exited increases by 2.999e-06
+#For rank uses France as a baseline so log odds increase by 7.333e-01 when moving from France to Germany
+#For rank uses Female as a baseline so log odds decrease by 5.780e-01 when moving from Female to Male
+#Residual Deviance: Reductions from 8135.0 to 6832.4, not great
+#AIC: Akaike information criterion – Comparison between models, lower AIC is better
+
+
+#Converting log odds coefficients to probabilities via exp() function
+bank_log_ouput <- exp(coef(bank_log))
+bank_log_ouput
+#For every unit increase in credit score the odds of being exited increase by a factor of 0.99940291 or the odds are 1 percent higher (subtract 1 and * 100).
+#For every unit increase in age the odds of being exited increase by a factor of 1.078 or the odds are 7 percent higher (subtract 1 and * 100).
+#For every unit increase in balance the odds of being exited increase by a factor of 1.0 or the odds are 0 percent higher (subtract 1 and * 100).
+
+#Test our models goodness of fit 
+hoslem.test(train$Exited, fitted(bank_log))
+#how well your data fits the model. Specifically, the HL test calculates if the observed event rates match the expected event rates in population subgroups.
+#p-value is 0.0986, above .05 better
+
+#First we want to use the data to predict the likelihood that each customer will be exited
+prob <- plogis(predict(bank_log, type = c("response")))
+head(prob)
+h <- roc(Exited~prob, data=train)
+plot(h)
+#Receiver Operating Characteristic: Measure of the Sensitivity (true positive) and Specificity (false positives) of the Model
+#Look good
+
+pR2(bank_log)
+
+```
+
+Use the model to predict Exited on the data
+```{r}
+predict.model2 <- predict.glm(bank_log,test,type='response')
+head(predict.model2)
+
+predict.model2.1 <- ifelse(predict.model2 > 0.5,1,0)
+
+#essentially we are creating percentage likelihood of Exited for each value, above 50% we are saying it's more likely to occur.
+head(predict.model2.1)
+
+test %>% group_by(Exited) %>% summarise(no_rows = length(Exited))
+#So we only had to correctly identify 390 Yes factors, which is 19.5%  of the total factor, not very small
+```
+
+hit rate
+```{r}
+model3hit <- mean(predict.model2.1!=test$Exited)
+model3hit
+```
+
+For our next trick let's do a roc curve, just to confirm our model, using a different package then our first example
+```{r}
+#In order to use the package we first have to set the prediction 
+newpredict <- prediction(predict.model2,test$Exited)
+#Next we want to measure true possitives which is "tpr" and also False Positives "fpr"
+newpredict.performance <- performance(newpredict, measure = "tpr",x.measure = "fpr")
+#then we plot these two measures
+plot(newpredict.performance)
+```
+
+run logisitc regression model, start by using CreditScore, Geography, Gender, Age, Balance, IsActiveMember
+```{r}
+bank_log<-glm(Exited~CreditScore+Geography+Gender+Age+Balance+IsActiveMember, family = binomial(link = "logit"), data = train)
+summary(bank_log)
+
+#The output is express in log odds, but we can convert to % via exp() function
+bank_log_ouput <- exp(coef(bank_log))
+bank_log_ouput
+
+library(ResourceSelection)
+#Test our models goodness of fit 
+hoslem.test(train$Exited, fitted(bank_log))
+library(pROC)
+
+#First we want to use the data to predict the likelihood that each customer will be exited
+prob=plogis(predict(bank_log, type = c("response")))
+head(prob)
+h <- roc(Exited~prob, data=train)
+plot(h)#Look good
+
+library(pscl)
+pR2(bank_log)
+
+```
+
+Use the model to predict Exited on the data
+```{r}
+predict.model2 <- predict.glm(bank_log,test,type='response')
+head(predict.model2)
+
+predict.model2.1 <- ifelse(predict.model2 > 0.5,1,0)
+
+#essentially we are creating percentage likelihood of Exited for each value, above 50% we are saying it's more likely to occur.
+head(predict.model2.1)
+
+test %>% group_by(Exited) %>% summarise(no_rows = length(Exited))
+#So we only had to correctly identify 390 Yes factors, which is 19.5%  of the total factor, not very small
+```
+
+get the AUC again using the performance function
+```{r}
+AUC <- performance(newpred, measure = "auc")
+AUC
+```
+
+hit rate
+```{r}
+model3hit <- mean(predict.model2.1!=test$Exited)
+model3hit
+```
+
+For our next trick let's do a roc curve, just to confirm our model, using a different package then our first example
+```{r}
+#In order to use the package we first have to set the prediction 
+newpredict <- prediction(predict.model2,test$Exited)
+#Next we want to measure true possitives which is "tpr" and also False Positives "fpr"
+newpredict.performance <- performance(newpredict, measure = "tpr",x.measure = "fpr")
+#then we plot these two measures
+plot(newpredict.performance)
+
+```
+
+Use this model to actually predict something
+```{r}
+actual <- data.frame(CreditScore=650,Geography='France',Gender='Male',Age=38,Balance=76486,IsActiveMember=0)
+actualpredict <- predict(bank_log,actual,type='response')
+actualpredict
+#Likelihood dropped to 16.98%
+
+#prediction about creditscore
+new.data.test1 <- data.frame(CreditScore=350:850,Geography='France',Gender='Male',Age=38,Balance=76486,IsActiveMember=0)
+new.data.test.pred1 <- predict(bank_log,new.data.test1, type = "response")
+head(new.data.test.pred1)
+scatter.smooth(new.data.test.pred1, xlab = "CreditScore", ylab = "Likelihood of Exited")
+
+#prediction about Geography
+new.data.test2 <- data.frame(CreditScore=650,Geography=rep(c('France','France','Spain'),2),Gender='Male',Age=38,Balance=76486,IsActiveMember=0)
+new.data.test.pred2 <- predict(bank_log,new.data.test2, type = "response")
+head(new.data.test.pred2)
+scatter.smooth(new.data.test.pred2, xlab = "Geography", ylab = "Likelihood of Exited")
+
+#prediction about Gender
+new.data.test3 <- data.frame(CreditScore=650,Geography='France',Gender=c('Male','Female'),Age=38,Balance=76486,IsActiveMember=0)
+new.data.test.pred3 <- predict(bank_log,new.data.test3, type = "response")
+head(new.data.test.pred3)
+scatter.smooth(new.data.test.pred3, xlab = "Gender", ylab = "Likelihood of Exited")
+
+#prediction about Age
+new.data.test4 <- data.frame(CreditScore=650,Geography='France',Gender='Male',Age=18:92,Balance=76486,IsActiveMember=0)
+new.data.test.pred4 <- predict(bank_log,new.data.test4, type = "response")
+head(new.data.test.pred4)
+scatter.smooth(new.data.test.pred4, xlab = "Age", ylab = "Likelihood of Exited")
+
+#prediction about Balance
+new.data.test5 <- data.frame(CreditScore=650,Geography='France',Gender='Male',Age=38,Balance=0:250898,IsActiveMember=0)
+new.data.test.pred5 <- predict(bank_log,new.data.test5, type = "response")
+head(new.data.test.pred5)
+scatter.smooth(new.data.test.pred5, xlab = "Balance", ylab = "Likelihood of Exited")
+
+#prediction about IsActiveMember
+new.data.test6 <- data.frame(CreditScore=650,Geography='France',Gender='Male',Age=38,Balance=76486,IsActiveMember=as.integer(0:1))
+new.data.test.pred6 <- predict(bank_log,new.data.test6, type = "response")
+head(new.data.test.pred6)
+scatter.smooth(new.data.test.pred6, xlab = "IsActiveMember", ylab = "Likelihood of Exited")
+
+```
+
+```{r}
+
+
+Use this model to actually predict something
+```{r}
+actual <- data.frame(CreditScore=600,Geography='Spain',Gender='Female',Age=45,Balance=10000,IsActiveMember=0)
+actualpredict <- predict(bank_log,actual,type='response')
+actualpredict
+#Likelihood rised to 34.48%
+
+#prediction about creditscore
+new.data.test1 <- data.frame(CreditScore=350:850,Geography=rep(c('France','France','Spain'),length(350:850)),Gender=rep(c('Female','Male'),length(350:850)),Age=18,Balance=0,IsActiveMember=0)
+new.data.test.pred1 <- predict(bank_log,new.data.test1, type = "response")
+head(new.data.test.pred1)
+scatter.smooth(new.data.test.pred1, xlab = "Factor", ylab = "Likelihood of Exited")
+
+#prediction about geography
+new.data.test2 <- data.frame(CreditScore=350:,Geography=c('France','France','Spain'),Gender=rep(c('Female',',Male')),Age=18,Balance=0,IsActiveMember=0)
+new.data.test.pred2 <- predict(bank_log,new.data.test2, type = "response")
+head(new.data.test.pred2)
+scatter.smooth(new.data.test.pred2, xlab = "Factor", ylab = "Likelihood of Exited")
+
+#prediction about gender
+new.data.test3 <- data.frame(CreditScore=350,Geography='France',Gender=c('Female','Male'),Age=18,Balance=0,IsActiveMember=0)
+new.data.test.pred3 <- predict(bank_log,new.data.test3, type = "response")
+head(new.data.test.pred3)
+scatter.smooth(new.data.test.pred3, xlab = "Factor", ylab = "Likelihood of Exited")
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(plyr)
+library(rpart)
+```
+
+
+
+```{r}
+bank_long = bank %>% gather(Var,        #<- list of predictor variables
+                                Value,      #<- the values of those predictor variables
+                                -Exited)  #<- the column to gather the data by
+View(bank_long)
+```
+
+```{r}
+bank_long_form = ddply(bank_long, 
+                            .(Var, Value),#<- group by Var and Value 
+                            summarize,  
+                            prob_exited = mean(Exited), #<- probability of being pregnant
+                            prob_not_exited = 1 - mean(Exited)) #<- probability of not being pregnant
+View(bank_long_form)
+```
+
+```{r}
+library(rpart)
+library(rpart.plot)
+str(bank)
+
+#Build the model
+# Train the tree with the rpart() function.
+# We'll need to set the seed to make the results reproducible. 
+set.seed(1)
+bank_tree_gini = rpart(Exited~.,                    #<- formula, response variable ~ predictors
+                                                           #   "." means "use all other variables in data"
+                            method = "class",	             #<- specify method, use "class" for tree
+                              #<- method for choosing tree split
+                            data = train)      #<- data used
+rpart.plot(bank_tree_gini)
+``` 
+
+
+
+hit rate
+```{r}
+rpart.pred<-predict(bank_tree_gini,test)
+
+
+
+
+
+
+
+set.seed(1)
+pregos_tree_cp2 = rpart(PREGNANT~.,                         #<- formula, response variable ~ predictors,
+                                                               #   "." means "use all other variables in data"
+                           method = "class",	                 #<- specify method, use "class" for tree
+                           parms = list(split = "gini"),       #<- method for choosing tree split
+                           data = pregos_factors,             #<- data used
+                           control = rpart.control(maxdepth = 4))
+
+
+
+
+
+```
+
