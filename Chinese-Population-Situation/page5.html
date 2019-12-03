@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Final Project</title>
+<style>
+body {
+    margin: 0;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 4px;
+  }
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 25%;
+    background-color: #f1f1f1;
+    position: fixed;
+    height: 100%;
+    overflow: auto;
+}
+
+li a {
+    display: block;
+    color: #000;
+    padding: 8px 16px;
+    text-decoration: none;
+}
+
+li a.active {
+    background-color: SteelBlue;
+    color: white;
+}
+
+li a:hover:not(.active) {
+    background-color: #555;
+    color: white;
+}
+h2 {
+    color:MidnightBlue ;
+      }
+</style>
+</head>
+<body>
+
+<ul>
+  <li><a href="page1.html">Home</a></li>
+  <li><a href="page2.html">Trend</a></li>
+  <li><a href="page3.html">Internal situation</a></li>
+  <li><a href="page4.html">Other factors</a></li>
+  <li><a class="active" href="page5.html">Comparision with India</a></li>
+</ul>
+
+<div style="margin-left:25%;padding:1px 16px;height:370px;">
+  <h2>Comparision Between China and India</h2>
+  
+  <p>China and India are the two most populous countries of the world. China is the most populous country with approximately 1.42 billion people in 2018. India is second largest country by population with approximately 1.35 billion inhabitants in 2018. China and India together account for 36.28% of total world population 7,632,819,325.<br /><br />In 2018, population of China is 41 million more than India. Due to higher population growth of India, margin between these two country is coming down quickly. And in 2024, India will have more people than China with approximately 1.44 billion people. Currently, China's population growth rate is only 0.39%, while India is growing at 1.11%. Population of China will decline after 2030 overall.<br /><br />In 1950, population of China was 554 million. While, population of India was 376 million. China crossed one billion mark in 1981 and India in 1998. By 2029, India will cross the 1.5 billion mark. In 2023, population of China and population of India reach the same level.<br /><br />China and India are the only countries in the world with populations of more than 1 billion. According to the most recent censuses of each nation, there were 1.266 billion people in China in 2000 and 1.029 billion in India in 2001. According to IDB estimates, there are now 1.368 billion people in China and 1.420 billion in India, and population growth rates have been consistently higher in India than in China since the early 1970s and will remain so for years to come. India’s population is projected to grow through at least 2050 (when it will be 1.656 billion), surpassing China in 2025, whereas China’s population is projected to reach a maximum, of 1.395 billion, in 2026 and to decrease thereafter.</p>
+  
+ 
+
+  
+</div>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 50, right: 140, bottom: 50, left: 450},
+    width = 1360 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+// parse the date / time
+var parseTime = d3.timeParse("%m/%d/%y");
+
+// set the ranges
+var x = d3.scaleLinear().range([0, width]);
+var y = d3.scaleLinear().range([height, 0]);
+
+// define the 1st line
+var valueline = d3.line()
+    .x(function(d) { return x(d.year); })
+    .y(function(d) { return y(d.India); });
+
+// define the 2nd line
+var valueline2 = d3.line()
+    .x(function(d) { return x(d.year); })
+    .y(function(d) { return y(d.China); });
+
+// append the svg obgect to the body of the page
+// appends a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// Get the data
+d3.csv("india.csv", function(error, data) {
+  if (error) throw error;
+
+  // format the data
+  data.forEach(function(d) {
+      d.year = +d.year;
+      d.China = +d.China;
+      d.India = +d.India;
+  });
+
+  // Scale the range of the data
+  x.domain(d3.extent(data, function(d) { return d.year; }));
+  y.domain([0, d3.max(data, function(d) {
+    return Math.max(d.India, d.China); })]);
+
+  // Add the valueline path.
+  svg.append("path")
+      .data([data])
+      .attr("class", "line")
+      .attr("d", valueline);
+
+  // Add the valueline2 path.
+  svg.append("path")
+      .data([data])
+      .attr("class", "line")
+      .style("stroke", "red")
+      .attr("d", valueline2);
+
+  // Add the X Axis
+  svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .style("font", "14px sans-serif")
+      .call(d3.axisBottom(x));
+     
+
+  // Add the Y Axis
+  svg.append("g")
+      .call(d3.axisLeft(y))
+       .style("font", "14px sans-serif")
+      .append("text")
+        .attr("class", "axis-title")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .attr("fill", "#5D6971")
+        .style("font", "16px sans-serif")
+        .text("Population");
+
+   svg.append("text")
+        .attr("x", (width / 2))             
+        .attr("y", 0 - (margin.top / 4))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "20px") 
+        .text("Comparision between China and India");
+
+
+var ordinal = d3.scale.ordinal()
+  .domain(["China", "India"])
+  .range([ "rgb(153, 107, 195)", "rgb(56, 106, 197)"]);
+
+
+svg.append("g")
+  .attr("class", "legendOrdinal")
+  .attr("transform", "translate(420,220)");
+
+var legendOrdinal = d3.legend()
+
+  .shape("path", d3.svg.symbol().type("triangle-up").size(150)())
+  .shapePadding(10)
+  .scale(ordinal);
+
+svg.select(".legendOrdinal")
+  .call(legendOrdinal);
+});
+
+</script>
+
+
+</body>
+</html>

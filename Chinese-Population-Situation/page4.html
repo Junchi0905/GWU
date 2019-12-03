@@ -1,0 +1,434 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Final Project</title>
+<style type="text/css">
+body {
+    margin: 0;
+
+}
+
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.dot {
+  stroke: blue;
+}
+
+
+div.tooltip { 
+    position: absolute;     
+    text-align: center;     
+    width: 100px;          
+    height: 40px;         
+    padding: 2px;       
+    font: 18px sans-serif;    
+    background: lightsteelblue; 
+    border: 0px;    
+    border-radius: 8px;     
+    pointer-events: none;     
+}
+
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 25%;
+    background-color: #f1f1f1;
+    position: fixed;
+    height: 100%;
+    overflow: auto;
+}
+
+li a {
+    display: block;
+    color: #000;
+    padding: 8px 16px;
+    text-decoration: none;
+}
+
+li a.active {
+    background-color: SteelBlue;
+    color: white;
+}
+
+li a:hover:not(.active) {
+    background-color: #555;
+    color: white;
+}
+h2 {
+    color:MidnightBlue ;
+      }
+
+      }
+</style>
+
+<script type="text/javascript">
+      var myclick = function(v) {
+        var llis = document.getElementsByTagName("li");
+        for(var i = 0; i < llis.length; i++) {
+          var lli = llis[i];
+          if(lli == document.getElementById("tab" + v)) {
+            lli.style.backgroundColor = "AntiqueWhite";
+          } else {
+            lli.style.backgroundColor = "LightBlue ";
+          }
+        }
+        var divs = document.getElementsByClassName("tab_css");
+        for(var i = 0; i < divs.length; i++) {
+          var divv = divs[i];
+          if(divv == document.getElementById("tab" + v + "_content")) {
+            divv.style.display = "block";
+          } else {
+            divv.style.display = "none";
+          }
+        }
+      }
+    </script>
+</head>
+
+<body>
+
+<ul>
+  <li><a href="page1.html">Home</a></li>
+  <li><a href="page2.html">Trend</a></li>
+  <li><a href="page3.html">Internal situation</a></li>
+  <li><a class="active" href="page4.html">Other factors</a></li>
+  <li><a href="page5.html">Comparision with India</a></li>
+</ul>
+   <div style="margin-left:25%;padding:1px 16px;height:190px;">
+      <h2>Relationship Between Population And Other Factors</h2>
+   <p>Nowadays, China has a fast speed of development. Our project focus on the developing situation of China. We picked up several data to research on this topic, which including growth rate, life expectancy, mean years in school 15 to 24 years and income per person. The reason why we choose these data is because we use HDI to measure people’s quality of life.The Human Development Index (HDI) is a statistic composite index of life expectancy, education, and per capita income indicators, which are used to rank countries into four tiers of human development.</p>
+</div>
+
+
+
+
+
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+<script>
+var margin = {top: 20, right: 20, bottom: 30, left: 460},
+    width = 1060 - margin.left - margin.right,
+    height = 450 - margin.top - margin.bottom;
+
+
+
+var xValue = function(d) { return d.growth_rate;}, 
+    xScale = d3.scale.linear().range([0, width]), 
+    xMap = function(d) { return xScale(xValue(d));}, 
+    xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+
+
+var yValue = function(d) { return d.life_expectancy;}, 
+    yScale = d3.scale.linear().range([height, 0]), 
+    yMap = function(d) { return yScale(yValue(d));}, 
+    yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+
+
+
+var svg1 = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var div = d3.select("body").append("div") 
+    .attr("class", "tooltip")       
+    .style("opacity", 0);
+
+
+d3.csv("life.csv", function(error,data) {
+
+
+  data.forEach(function(d) {
+    d.growth_rate = +d.growth_rate;
+    d.life_expectancy = +d.life_expectancy
+    d.year = +d.year;
+  });
+
+
+  xScale.domain([d3.min(data, xValue)-1, d3.max(data, xValue)+1]);
+  yScale.domain([d3.min(data, yValue)-1, d3.max(data, yValue)+1]);
+
+
+  svg1.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Growth rate");
+
+
+  svg1.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Life Expectancy");
+
+  svg1.append("text")
+        .attr("x", (width / 2))             
+        .attr("y", 0 - (margin.top / 4))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "20px") 
+        .text("Relationship between life expectancy and Growth Rate");
+
+
+  svg1.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", 3.5)
+      .attr("cx", xMap)
+      .attr("cy", yMap)
+
+      .on("mouseover", function(d) {    
+            div.transition()    
+                .duration(200)    
+                .style("opacity", .9);    
+            div .html("year : " + d.year) 
+                .style("left", (d3.event.pageX) + "px")   
+                .style("top", (d3.event.pageY - 28) + "px");  
+            })          
+        .on("mouseout", function(d) {   
+            div.transition()    
+                .duration(500)    
+                .style("opacity", 0); 
+        });
+
+
+
+});
+
+</script>
+
+   <div style="margin-left:25%;padding:1px 16px;height:100px;">
+   <p>In the above scatterplot, it is obviously that in most time there is a negative relationship between life expectancy and growth rate. Beside the 4 outliers, we can conclude that the lower the growth rate is, the higher the life expectancy is. Also, the growth rate reduced over time. From 1963 to 1988, there is a fluctuation. The reason for the outliers is because of a historical event happened 1960 to 1962, Great Chinese Famine.</p>
+</div>
+
+
+
+<script>
+
+var yValuee = function(d) { return d.mean_year_in_school_15_to_24_years;}, 
+    yScalee = d3.scale.linear().range([height, 0]), 
+    yMape = function(d) { return yScalee(yValuee(d));}, 
+    yAxise = d3.svg.axis().scale(yScalee).orient("left");
+
+
+
+
+var svg2 = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var div2 = d3.select("body").append("div") 
+    .attr("class", "tooltip")       
+    .style("opacity", 0);
+
+
+d3.csv("education.csv", function(error,data) {
+
+
+  data.forEach(function(d) {
+    d.growth_rate = +d.growth_rate;
+    d.mean_year_in_school_15_to_24_years = +d.mean_year_in_school_15_to_24_years
+    d.year = +d.year;
+  });
+
+
+  xScale.domain([d3.min(data, xValue)-1, d3.max(data, xValue)+1]);
+  yScalee.domain([d3.min(data, yValuee)-1, d3.max(data, yValuee)+1]);
+
+
+  svg2.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Growth Rate");
+
+
+  svg2.append("g")
+      .attr("class", "y axis")
+      .call(yAxise)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Mean Year In School 15 To 24 Years");
+
+  svg2.append("text")
+        .attr("x", (width / 2))             
+        .attr("y", 0 - (margin.top / 4))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "20px") 
+        .text("Relationship between education and Growth Rate");
+
+
+  svg2.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", 3.5)
+      .attr("cx", xMap)
+      .attr("cy", yMape)
+
+      .on("mouseover", function(d) {    
+            div2.transition()    
+                .duration(200)    
+                .style("opacity", .9);    
+            div2 .html("year : " + d.year) 
+                .style("left", (d3.event.pageX) + "px")   
+                .style("top", (d3.event.pageY - 28) + "px");  
+            })          
+        .on("mouseout", function(d) {   
+            div2.transition()    
+                .duration(500)    
+                .style("opacity", 0); 
+        });
+
+
+
+});
+
+
+</script>
+
+   <div style="margin-left:25%;padding:1px 16px;height:100px;">
+   <p>In this graph, we use Mean Year In School 15 to 24 Years as a measure of education. The data began from 1970 to 2015. Between 1970 and 1980, mean year in school (15-24) grew slowly and growth rate declined from 2.75 to 1.25. From 1980 to 1988, mean year in school (15-24) increased from 6.75 to 7.75 and growth rate increased from 1.25 to 2.25. Later from 1988 to 2015. The trend is similar to the above two, which is steadily growing over time. The two variables are still negatively correlated overall.From this scatterplot, the conclusion we can draw is that income and population growth rates are negatively correlated. The trend is similar to the trend of Life Expectancy from 1988 to 2017, which shows income became higher with the growth rate reduced. Between 1963 to 1988, there is also a fluctuation.</p>
+</div>
+
+
+<script>
+
+
+
+
+
+var yValuet = function(d) { return d.income_per_person;}, 
+    yScalet = d3.scale.linear().range([height, 0]), 
+    yMapt = function(d) { return yScalet(yValuet(d));}, 
+    yAxist = d3.svg.axis().scale(yScalet).orient("left");
+
+
+
+
+var svg3 = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var div3 = d3.select("body").append("div") 
+    .attr("class", "tooltip")       
+    .style("opacity", 0);
+
+
+d3.csv("income.csv", function(error,data) {
+
+
+  data.forEach(function(d) {
+    d.growth_rate = +d.growth_rate;
+    d.income_per_person = +d.income_per_person
+    d.year = +d.year;
+  });
+
+
+  xScale.domain([d3.min(data, xValue)-1, d3.max(data, xValue)+1]);
+  yScalet.domain([d3.min(data, yValuet)-1, d3.max(data, yValuet)+1]);
+
+
+  svg3.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Growth Rate");
+
+
+  svg3.append("g")
+      .attr("class", "y axis")
+      .call(yAxist)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Income");
+
+  svg3.append("text")
+        .attr("x", (width / 2))             
+        .attr("y", 0 - (margin.top / 4))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "20px") 
+        .text("Relationship between income and Growth Rate");
+
+
+  svg3.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", 3.5)
+      .attr("cx", xMap)
+      .attr("cy", yMapt)
+
+      .on("mouseover", function(d) {    
+            div3.transition()    
+                .duration(200)    
+                .style("opacity", .9);    
+            div3 .html("year : " + d.year) 
+                .style("left", (d3.event.pageX) + "px")   
+                .style("top", (d3.event.pageY - 28) + "px");  
+            })          
+        .on("mouseout", function(d) {   
+            div3.transition()    
+                .duration(500)    
+                .style("opacity", 0); 
+        });
+
+
+
+});
+
+
+
+</script>
+
+  <div style="margin-left:25%;padding:1px 16px;height:100px;">
+<p>From this scatterplot, the conclusion we can draw is that income and population growth rates are negatively correlated. The trend is similar to the trend of Life Expectancy from 1988 to 2017, which shows income became higher with the growth rate reduced. Between 1963 to 1988, there is also a fluctuation.</p>
+</div>
+
+</body>
+</html>
+

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Final Project</title>
+<style>
+body {
+  margin: 0;
+
+ 
+}
+
+.bar {
+    fill: #6F257F;
+}
+
+.bar:hover {
+      fill: yellow;
+    }
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #D4D8DA;
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+.x path {
+    display: none;
+}
+.toolTip {
+    position: absolute;
+  display: none;
+  min-width: 80px;
+  height: auto;
+  background: none repeat scroll 0 0 #ffffff;
+  border: 1px solid #6F257F;
+  padding: 14px;
+  text-align: center;
+}
+
+
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 25%;
+    background-color: #f1f1f1;
+    position: fixed;
+    height: 100%;
+    overflow: auto;
+}
+
+li a {
+    display: block;
+    color: #000;
+    padding: 8px 16px;
+    text-decoration: none;
+}
+
+li a.active {
+    background-color: SteelBlue;
+    color: white;
+}
+
+li a:hover:not(.active) {
+    background-color: #555;
+    color: white;
+}
+h2 {
+    color:MidnightBlue ;
+      }
+</style>
+</head>
+<body>
+
+<ul>
+  <li><a href="page1.html">Home</a></li>
+  <li><a href="page2.html">Trend</a></li>
+  <li><a class="active" href="page3.html">Internal situation</a></li>
+  <li><a href="page4.html">Other factors</a></li>
+  <li><a href="page5.html">Comparision with India</a></li>
+</ul>
+
+<div style="margin-left:25%;padding:1px 16px;height:150px;">
+  <h2>The Internal Population Situation </h2>
+  
+  <p>If we take a look of the graph of the internal distribution of population (Each province inside China). The well-known pattern of heavy population density on the east coast and lesser density inland belies the fact that even in the most far-flung provinces, the populations are not exactly tiny (Xinjiang: 20 million, Inner Mongolia: 24 million), Heilongjiang: 38 million, Yunnan: 44 million), except in Qinghai (5 million) and Tibet (3 million). The province of which population is leaset is Tibet, only 3 million. The top three provinces are Guangdong(113 million, Germany plus Uganda), Shandong (100 million, Philippines)and Henan(95 million,Mexico).  </p>
+  
+ 
+
+</div>
+
+
+<svg width="1310" height="790"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+var svg = d3.select("svg"),
+    margin = {top: 20, right: 20, bottom: 30, left: 480},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom;
+  
+var tooltip = d3.select("body").append("div").attr("class", "toolTip");
+  
+var x = d3.scaleLinear().range([0, width]);
+var y = d3.scaleBand().range([height, 0]);
+
+var g = svg.append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  
+d3.csv("province.csv", function(error, data) {
+    if (error) throw error;
+  
+    data.sort(function(a, b) { return a.value - b.value; });
+  
+    x.domain([0, d3.max(data, function(d) { return d.Population; })]);
+    y.domain(data.map(function(d) { return d.Province; })).padding(0.1);
+
+    g.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+
+    g.append("g")
+        .attr("class", "y axis")
+        .style("font", "13px comic sans MS")
+        .call(d3.axisLeft(y));
+
+    g.selectAll(".bar")
+        .data(data)
+      .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", 0)
+        .attr("height", y.bandwidth())
+        .attr("y", function(d) { return y(d.Province); })
+        .attr("width", function(d) { return x(d.Population); })
+        .on("mousemove", function(d){
+            tooltip
+              .style("left", d3.event.pageX - 50 + "px")
+              .style("top", d3.event.pageY - 70 + "px")
+              .style("display", "inline-block")
+              .html((d.Province) + "<br>" + (d.Population) + "million");
+        })
+            .on("mouseout", function(d){ tooltip.style("display", "none");});
+});
+
+
+</script>
+
+
+</body>
+</html>

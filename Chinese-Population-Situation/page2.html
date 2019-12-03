@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style> /* set the CSS */
+body {
+    margin: 0;
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    width: 25%;
+    background-color: #f1f1f1;
+    position: fixed;
+    height: 100%;
+    overflow: auto;
+}
+
+li a {
+    display: block;
+    color: #000;
+    padding: 8px 16px;
+    text-decoration: none;
+}
+
+li a.active {
+    background-color: SteelBlue;
+    color: white;
+}
+
+li a:hover:not(.active) {
+    background-color: #555;
+    color: white;
+}
+h2 {
+    color:MidnightBlue ;
+      }
+.line {
+  fill: none;
+  stroke: SteelBlue;
+  stroke-width: 4px;
+}
+
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+.focus circle {
+  fill: #F1F3F3;
+  stroke: #6F257F;
+  stroke-width: 5px;
+}
+  
+.hover-line {
+  stroke: #6F257F;
+  stroke-width: 2px;
+  stroke-dasharray: 2,4;
+}
+
+
+
+
+</style>
+</head>
+<body>
+
+<ul>
+  <li><a href="page1.html">Home</a></li>
+  <li><a class="active" href="page2.html">Trend</a></li>
+  <li><a href="page3.html">Internal situation</a></li>
+  <li><a href="page4.html">Other factors</a></li>
+  <li><a href="page5.html">Comparision with India</a></li>
+</ul>
+
+
+<div style="margin-left:25%;padding:1px 16px;height:250px;">
+  <h2>Population and Growth rate</h2>
+  
+  <p>In the population line charts, it is clearly that the trend of Chinese population is growing from 1950 to 2019. Unsurprisingly, 1990 was a turning point, and population shows a slow growth after 1990. It is correspondingly in the growth rate line graph that growth rate decreased soon in this period. During this period, more and more female teenagers are going to school and the quality of life of the people has been improved a lot.<br><br> In the growth rate line graph, the population growth rate fluctuated between 1950 and 2000. In 1956 (1.43%) and 1982 (1.41%), the growth rate reached the bottom point. Also, the growth rate peaked in 1968 (2.79%) and 1988 (1.94%).  In 1971, China began to strictly implement the family planning policy. The family planning movement was very successful, and the overall fertility rate in China fell by half between 1971 and 1978, which is the reason why growth rate declined rapidly. After 2020, growth rate will decline until 2060 and then increase after 2060. 2029 is turning point in which growth rate is zero. After 2029, the growth rate become negative from positive. Which is meant by this is that Chinese population begin to decrease after 2019. Although China has a huge population, the population growth rate will gradually decline over time.</p>
+</div>
+
+
+<!-- load the d3.js library -->     
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script>
+
+// set the dimensions and margins of the graph
+  var margin = {top: 40, right: 10, bottom: 20, left: 460},
+    width = 1100 - margin.left - margin.right,
+    height = 350 - margin.top - margin.bottom;
+
+
+// set the ranges
+  var x = d3.scaleLinear().range([0, width]);
+  var y = d3.scaleLinear().range([height, 0]);
+
+// define the 1st line
+  var valueline = d3.line()
+    .x(function(d) { return x(d.year); })
+    .y(function(d) { return y(d.population); });
+
+// append the svg obgect to the body of the page
+// appends a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+  var svg1 = d3.select("body").append("svg")
+     .attr("width", width + margin.left + margin.right)
+     .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+     .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+
+
+svg1.append('text').html('Chinese Population').attr('x', 300);
+
+// Get the data
+   d3.csv("population1.csv", function(error, data) {
+    if (error) throw error;
+
+  // format the data
+   data.forEach(function(d) {
+      d.year= +d.year;
+      d.population = +d.population;
+      
+   });
+
+  // Scale the range of the data
+   x.domain(d3.extent(data, function(d) { return d.year; }));
+   y.domain([0, d3.max(data, function(d) {
+    return Math.max(d.population); })]);
+
+  // Add the valueline path.
+   svg1.append("path")
+      .data([data])
+      .attr("class", "line")
+      .attr("d", valueline);
+
+  // Add the X Axis
+   svg1.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .style("font", "14px sans-serif")
+      .call(d3.axisBottom(x))
+
+
+
+
+
+  // Add the Y Axis
+   svg1.append("g")
+      .attr("class", "y axis")
+      .call(d3.axisLeft(y))
+      .style("font", "14px sans-serif")
+.append("text")
+        .attr("class", "axis-title")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .attr("fill", "#5D6971")
+        .style("font", "16px sans-serif")
+        .text("Population(unit=million)");
+
+      
+  
+
+
+
+    var focus = svg1.append("g")
+        .attr("class", "focus")
+        .style("display", "none");
+
+    focus.append("line")
+        .attr("class", "x-hover-line hover-line")
+        .attr("y1", 0)
+        .attr("y2", height);
+
+    focus.append("line")
+        .attr("class", "y-hover-line hover-line")
+        .attr("x1", width)
+        .attr("x2", width);
+
+    focus.append("circle")
+        .attr("r", 6);
+
+    focus.append("text")
+        .attr("x", 15)
+        .attr("dy", ".31em");
+
+    svg1.append("rect")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .attr("class", "overlay")
+        .attr("width", width)
+        .attr("height", height)
+        .on("mouseover", function() { focus.style("display", null); })
+        .on("mouseout", function() { focus.style("display", "none"); })
+        .on("mousemove", mousemove);
+
+    function mousemove() {
+
+      focus.attr("transform", "translate(" + x(d.year) + "," + y(d.population) + ")");
+      focus.select("text").text(function() { return d.population; });
+      focus.select(".x-hover-line").attr("y2", height - y(d.population));
+      focus.select(".y-hover-line").attr("x2", width + width);
+
+
+
+}
+
+
+        });
+
+
+
+
+
+// define the 1st line
+  var valuelinee = d3.line()
+    .x(function(d) { return x(d.year); })
+    .y(function(d) { return y(d.growthrate); });
+
+// append the svg obgect to the body of the page
+// appends a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+  var svg2 = d3.select("body").append("svg")
+     .attr("width", width + margin.left + margin.right)
+     .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+     .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")")
+
+
+svg2.append('text').html('Chinese Growth Rate').attr('x', 300);
+
+// Get the data
+   d3.csv("growthrate.csv", function(error, data) {
+    if (error) throw error;
+
+  // format the data
+   data.forEach(function(d) {
+      d.year= +d.year;
+      d.growthrate = +d.growthrate;
+      
+   });
+
+  // Scale the range of the data
+   x.domain(d3.extent(data, function(d) { return d.year; }));
+   y.domain([-0.7, d3.max(data, function(d) {
+    return Math.max(d.growthrate); })]);
+
+  // Add the valueline path.
+   svg2.append("path")
+      .data([data])
+      .attr("class", "line")
+      .attr("d", valuelinee);
+
+  // Add the X Axis
+   svg2.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .style("font", "14px sans-serif")
+      .call(d3.axisBottom(x));
+
+  // Add the Y Axis
+   svg2.append("g")
+      .attr("class", "y axis")
+      .call(d3.axisLeft(y))
+      .style("font", "14px sans-serif")
+      .append("text")
+        .attr("class", "axis-title")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 15)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .style("font", "16px sans-serif")
+        .attr("fill", "#5D6971")
+        .text("Growth Rate");;
+
+        });
+
+  </script>
+
+  </body>
+</html>
