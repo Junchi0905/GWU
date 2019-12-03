@@ -1,0 +1,144 @@
+---
+title: "project1"
+author: "Junchi Tian"
+date: "October 17, 2018"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#List of Libraries for this code
+```{r, setup}
+library(stats)
+library(car)
+library(e1071)
+library(gvlma)
+library(ggplot2)
+library(GGally)
+library(corrplot)
+library(faraway)
+library(fmsb)
+library(broom)
+library(modelr)
+library(dplyr)
+library(psych)
+library(corrplot)
+```
+
+#Read in the data
+```{r}
+setwd('/Users/bixuan/Desktop/Intro\ to\ DS/Project\ 1/edu')
+coun_data <- read.csv('countries of the world.csv')
+str(coun_data)
+
+#change the type of some variables into number
+coun_data$Pop..Density..per.sq..mi.. <- as.numeric(coun_data$Pop..Density..per.sq..mi..)
+coun_data$Coastline..coast.area.ratio. <- as.numeric(coun_data$Coastline..coast.area.ratio.)
+coun_data$Net.migration <- as.numeric(coun_data$Net.migration)
+coun_data$Infant.mortality..per.1000.births. <- as.numeric(coun_data$Infant.mortality..per.1000.births.)
+coun_data$Literacy.... <- as.numeric(coun_data$Literacy....)
+coun_data$Phones..per.1000. <- as.numeric(coun_data$Phones..per.1000.)
+coun_data$Arable.... <- as.numeric(coun_data$Arable....)
+coun_data$Crops.... <- as.numeric(coun_data$Crops....)
+coun_data$Other.... <- as.numeric(coun_data$Other....)
+coun_data$Climate <- as.numeric(coun_data$Climate)
+coun_data$Birthrate <- as.numeric(coun_data$Birthrate)
+coun_data$Deathrate <- as.numeric(coun_data$Deathrate)
+coun_data$Agriculture <- as.numeric(coun_data$Agriculture)
+coun_data$Industry <- as.numeric(coun_data$Industry)
+coun_data$Service <- as.numeric(coun_data$Service)
+str(coun_data)
+
+region <- coun_data$Region
+coastline <- coun_data$Coastline..coast.area.ratio. 
+net_mig <- coun_data$Net.migration
+gdp <- coun_data$GDP....per.capita.
+agriculture <- coun_data$Agriculture
+
+```
+
+#Select a few independent variables to explain the dependent variable
+```{r}
+#run a correlation matrix
+coun_cor <- cor(select_if(coun_data, is.numeric),use = "complete",method="pearson")
+coun_cor
+corrplot(coun_cor)
+#according to the results in correlation matrix, we are going to choose the gdp, coastline and region as the independent variable.
+
+#summary of the variable
+summary(net_mig)
+summary(gdp)
+summary(coastline)
+summary(region)
+
+#hist of the numeric variable
+hist(net_mig)
+hist(gdp)
+hist(coastline)
+
+#standard deviation of the numeric variable
+sd(net_mig)
+sd(gdp,na.rm=TRUE)
+sd(birthrate,na.rm=TRUE)
+
+```
+
+#simple linear regression
+```{r}
+#according to the analysis of the independent variable, we choose gdp as the main independent variable
+sim_model <- lm(net_mig~gdp)
+sim_model
+summary(sim_model)
+scatter.smooth(net_mig,gdp)
+skewness(sim_model$residuals)
+
+```
+
+#Linear relationships with dependent variable.
+```{r}
+#design model
+coun_model <- lm(net_mig~region+gdp+climate+coastline,data=coun_data)
+coun_model
+summary(coun_model)
+
+#Check whether the residuals are normally shaped?
+hist(coun_model$residuals)
+skewness(coun_model$residuals)
+qqnorm(coun_model$residuals,ylab = "Observed Quantiles",main = "Q-Q Plot to Test Normality of Residuals")
+
+#Multicollinearity
+vif(coun_model)
+VIF(coun_model)
+
+#Global Validation of Linear Models Assumptions
+assump<-gvlma(coun_model)
+assump
+
+```
+
+
+#Measure of Variance
+```{r}
+#ANOVA Table
+anova(coun_model)
+#Fit an Analysis of Variance Model
+aov(coun_model)
+summary(aov(coun_model))
+#Standard Deviation of the corelationship
+sd(coun_cor)
+
+```
+
+
+#Plot of the model
+```{r}
+#Spread-Level Plot for the model
+spreadLevelPlot(coun_model)
+
+```
+
+```
